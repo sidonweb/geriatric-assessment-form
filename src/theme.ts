@@ -1,3 +1,14 @@
 import { createTheme } from '@mantine/core';
 
-export const theme = createTheme({/** Put your mantine theme override here */});
+const fontFamily =
+  '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif';
+
+export const theme = createTheme({
+  fontFamily,
+  primaryColor: 'blue',
+  defaultRadius: 'md',
+  headings: {
+    fontFamily,
+    fontWeight: '600',
+  },
+});
