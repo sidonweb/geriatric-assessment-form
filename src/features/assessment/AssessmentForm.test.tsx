@@ -1,6 +1,6 @@
 import { render, screen, userEvent, waitFor } from '@test-utils';
 import { AssessmentForm } from './AssessmentForm';
-import { samplePatient } from './fixtures';
+import { samplePatient } from './samplePatient';
 
 describe('AssessmentForm', () => {
   it('saves the parsed sample patient', async () => {

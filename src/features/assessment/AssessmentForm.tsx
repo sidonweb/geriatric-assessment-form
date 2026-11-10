@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Button,
@@ -19,8 +19,9 @@ import {
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { schemaResolver, useForm } from '@mantine/form';
-import { samplePatient } from './fixtures';
 import { toLabel } from './labels';
+import { samplePatient } from './samplePatient';
+import { saveAssessment } from './saveAssessment';
 import { assessmentSchema, MOBILITY, type Assessment } from './schema';
 import type { AssessmentFormValues } from './types';
 
@@ -40,11 +41,12 @@ const emptyValues: AssessmentFormValues = {
 };
 
 interface AssessmentFormProps {
-  onSave: (values: Assessment) => Promise<void>;
+  onSave?: (values: Assessment) => Promise<void>;
 }
 
-export function AssessmentForm({ onSave }: AssessmentFormProps) {
+export function AssessmentForm({ onSave = saveAssessment }: AssessmentFormProps) {
   const [saved, setSaved] = useState<Assessment | null>(null);
+  const alertRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<AssessmentFormValues, Assessment>({
     mode: 'uncontrolled',
@@ -63,6 +65,17 @@ export function AssessmentForm({ onSave }: AssessmentFormProps) {
     setSaved(values);
   };
 
+  const loadSample = () => {
+    form.setValues(samplePatient);
+    form.clearErrors();
+  };
+
+  useEffect(() => {
+    if (saved) {
+      alertRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [saved]);
+
   return (
     <Container size="sm" py="xl">
       <Stack gap={4} mb="lg">
@@ -74,9 +87,14 @@ export function AssessmentForm({ onSave }: AssessmentFormProps) {
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="lg">
             <Stack gap="sm">
-              <Text size="sm" c="dimmed">
-                Patient
-              </Text>
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">
+                  Patient
+                </Text>
+                <Button variant="subtle" size="xs" onClick={loadSample}>
+                  Load sample patient
+                </Button>
+              </Group>
               <TextInput
                 label="Medical record number"
                 placeholder="MRN-004821"
@@ -171,20 +189,15 @@ export function AssessmentForm({ onSave }: AssessmentFormProps) {
               />
             </Stack>
 
-            <Group justify="space-between">
-              <Button variant="default" onClick={() => form.setValues(samplePatient)}>
-                Load sample patient
-              </Button>
-              <Button type="submit" loading={form.submitting}>
-                Save assessment
-              </Button>
-            </Group>
+            <Button type="submit" size="md" fullWidth loading={form.submitting}>
+              Save assessment
+            </Button>
           </Stack>
         </form>
       </Paper>
 
       {saved && (
-        <Alert color="green" title="Assessment saved" mt="lg" radius="lg">
+        <Alert ref={alertRef} color="green" title="Assessment saved" mt="lg" radius="lg">
           <Code block>{JSON.stringify(saved, null, 2)}</Code>
         </Alert>
       )}

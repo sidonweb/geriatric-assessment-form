@@ -1,4 +1,4 @@
-import { samplePatient } from './fixtures';
+import { samplePatient } from './samplePatient';
 import { assessmentSchema } from './schema';
 
 describe('assessmentSchema', () => {
