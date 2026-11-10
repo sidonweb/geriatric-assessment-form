@@ -1,7 +1,10 @@
 import dayjs from 'dayjs';
+import { useState } from 'react';
 import {
+  Alert,
   Button,
   Checkbox,
+  Code,
   Container,
   Divider,
   Group,
@@ -16,8 +19,9 @@ import {
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { schemaResolver, useForm } from '@mantine/form';
+import { samplePatient } from './fixtures';
 import { toLabel } from './labels';
-import { assessmentSchema, MOBILITY } from './schema';
+import { assessmentSchema, MOBILITY, type Assessment } from './schema';
 import type { AssessmentFormValues } from './types';
 
 const mobilityOptions = MOBILITY.map((value) => ({ value, label: toLabel(value) }));
@@ -35,15 +39,29 @@ const emptyValues: AssessmentFormValues = {
   consentObtained: false,
 };
 
-export function AssessmentForm() {
-  const form = useForm<AssessmentFormValues>({
+interface AssessmentFormProps {
+  onSave: (values: Assessment) => Promise<void>;
+}
+
+export function AssessmentForm({ onSave }: AssessmentFormProps) {
+  const [saved, setSaved] = useState<Assessment | null>(null);
+
+  const form = useForm<AssessmentFormValues, Assessment>({
     mode: 'uncontrolled',
     initialValues: emptyValues,
     validate: schemaResolver(assessmentSchema, { sync: true }),
     validateInputOnBlur: true,
+    // only runs after validation passed, so parse won't throw. gives us zod's output (trimmed etc)
+    transformValues: (values) => assessmentSchema.parse(values),
   });
 
   const today = dayjs().format('YYYY-MM-DD');
+
+  const handleSubmit = async (values: Assessment) => {
+    setSaved(null);
+    await onSave(values);
+    setSaved(values);
+  };
 
   return (
     <Container size="sm" py="xl">
@@ -53,8 +71,7 @@ export function AssessmentForm() {
       </Stack>
 
       <Paper withBorder radius="lg" p="xl">
-        {/* save gets wired up in the next step */}
-        <form onSubmit={form.onSubmit(() => {})}>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="lg">
             <Stack gap="sm">
               <Text size="sm" c="dimmed">
@@ -154,12 +171,23 @@ export function AssessmentForm() {
               />
             </Stack>
 
-            <Group justify="flex-end">
-              <Button type="submit">Save assessment</Button>
+            <Group justify="space-between">
+              <Button variant="default" onClick={() => form.setValues(samplePatient)}>
+                Load sample patient
+              </Button>
+              <Button type="submit" loading={form.submitting}>
+                Save assessment
+              </Button>
             </Group>
           </Stack>
         </form>
       </Paper>
+
+      {saved && (
+        <Alert color="green" title="Assessment saved" mt="lg" radius="lg">
+          <Code block>{JSON.stringify(saved, null, 2)}</Code>
+        </Alert>
+      )}
     </Container>
   );
 }
